@@ -1,16 +1,10 @@
-# CakePHP Application Skeleton
+# Emma Backend
 
-[![Build Status](https://img.shields.io/travis/cakephp/app/master.svg?style=flat-square)](https://travis-ci.org/cakephp/app)
-[![License](https://img.shields.io/packagist/l/cakephp/app.svg?style=flat-square)](https://packagist.org/packages/cakephp/app)
-
-A skeleton for creating applications with [CakePHP](http://cakephp.org) 3.x.
-
-The framework source code can be found here: [cakephp/cakephp](https://github.com/cakephp/cakephp).
-
-## Installation
+<!-- ## Installation
 
 1. Download [Composer](http://getcomposer.org/doc/00-intro.md) or update `composer self-update`.
 2. Run `php composer.phar create-project --prefer-dist cakephp/app [app_name]`.
+3. Clone this repo to your preffered location by
 
 If Composer is installed globally, run
 
@@ -51,4 +45,18 @@ Read and edit `config/app.php` and setup the `'Datasources'` and any other
 configuration relevant for your application.
 
 ## Layout
-The app skeleton uses a subset of [Foundation](http://foundation.zurb.com/) CSS framework by default. You can, however, replace it with any other library or custom styles.
+The app skeleton uses a subset of [Foundation](http://foundation.zurb.com/) CSS framework by default. You can, however, replace it with any other library or custom styles. -->
+
+## Introduction
+
+This project contains the backend code for "Emma" and is necessary for the code that is explained in the [Emma](https://github.com/tijnrenders/emma) repo. Emma is created for school purposes and we recommend not to use this for anything else.
+
+## Request points
+
+As documented in the [Emma](https://github.com/tijnrenders/emma) repo there are for now only three request points.
+
+1. /register_user
+2. /check_user
+3. /get_response
+
+These request points depend on the information that Facebook provide to us and will not work without it. 
