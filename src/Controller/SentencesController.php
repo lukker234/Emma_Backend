@@ -148,6 +148,14 @@ class SentencesController extends AppController
 
     public function registerUser(){
       $value = $this->request;
+      // $data = Array(
+      //       "recipientId" => $value->data('recipientId'),
+      //       "Name" => $value->data('first_name') . $value->data('last_name'),
+      //       "type" => "text",
+      //       "message" => "Hallo " . $value->data('first_name') . " Leuk je te leren kenen",
+      //
+      //   );
+        // $this->set('data', $data);
 
       $connection = ConnectionManager::get('default');
       $connection->insert('Registred_users', [
@@ -160,7 +168,9 @@ class SentencesController extends AppController
 
     public function checkUser(){
       $value = $this->request;
-      $id  = $value->data('recipientId');
+      $json_encode  = $value->data('recipientId');
+
+      $id = json_encode($json_encode);
 
       $users = TableRegistry::get('Registred_users');
 
