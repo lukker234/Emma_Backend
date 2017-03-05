@@ -195,4 +195,31 @@ class SentencesController extends AppController
           $this->set('data', $data);
       }
     }
+
+    public function getResponse(){
+      $value = $this->request;
+      $json_encode = $value->data('recipientId');
+
+      $id = json_encode($json_encode);
+
+      $users = TableRegistry::get('Registred_users');
+
+      $query = $users->find();
+      $query->where([
+        'Registred_users.recipientid' => $id
+      ]);
+
+      $found_user = $query->first();
+
+      if(is_object($found_user)){
+        $fullname = $query->first()->name;
+        $split_name = explode(" ", $fullname);
+        $firstname = $split_name[0];
+        $data = Array(
+              "recipientId" => $value->data('recipientId'),
+              "message" => "Hallo " . $firstname . " leuk je weer te zien!"
+          );
+          $this->set('data', $data);
+      }
+    }
 }
