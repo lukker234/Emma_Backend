@@ -53,93 +53,10 @@ class SentencesController extends AppController
           }
 
           print_r($names);
+    }
 
-          // echo json_encode($voornaam->toArray());
-
-          // echo json_encode($voornaam);
-          // if(count($names) > 1){
-          //   $names = array_unique($names);
-          //   if(count($names) > 1){
-          //     foreach ($names as $found => $name) {
-          //       if($name == "ben"){
-          //         unset($names[$found]);
-          //       }
-          //     }
-          //     if(count($names) > 1){
-          //       foreach ($Exploded_sentence as $value) {
-          //         foreach ($names as $name) {
-          //           if(strcmp($name, $value) == 0){
-          //             $found_name = $name;
-          //           }
-          //         }
-          //       }
-          //     }
-          //     else{
-          //       $found_name = $name;
-          //     }
-          //   }
-          //   else{
-          //     $found_name = $names[0];
-          //   }
-          // }
-          // else{
-          //   $found_name = $names[0];
-          // }
-
-        //
-        //
-        //   foreach ($Exploded_sentence as $value) {
-        //
-        //     $sql = "SELECT * FROM Namen WHERE voornaam = '".$value."'";
-        //     $result = $conn->query($sql);
-        //
-        //     if ($result->num_rows > 0) {
-        //       while($row = $result->fetch_assoc()) {
-        //         if($row['geslacht'] == 'M'){
-        //           $geslacht = 'Man';
-        //         }
-        //         else{
-        //           $geslacht = 'Vrouw';
-        //         }
-        //         // bedenken hoe het op te lossen is als het een man en vrouw kan zijn.
-        //
-        //         array_push($names, strtolower($row['voornaam']));
-        //       }
-        //     } else {
-        //     }
-        //   }
-        //
-        //
-        // if(count($names) > 1){
-        //   $names = array_unique($names);
-        //   if(count($names) > 1){
-        //     foreach ($names as $found => $name) {
-        //       if($name == "ben"){
-        //         unset($names[$found]);
-        //       }
-        //     }
-        //     if(count($names) > 1){
-        //       foreach ($Exploded_sentence as $value) {
-        //         foreach ($names as $name) {
-        //           if(strcmp($name, $value) == 0){
-        //             $found_name = $name;
-        //           }
-        //         }
-        //       }
-        //     }
-        //     else{
-        //       $found_name = $name;
-        //     }
-        //   }
-        //   else{
-        //     $found_name = $names[0];
-        //   }
-        // }
-        // else{
-        //   $found_name = $names[0];
-        // }
-
-        // $this->set('test', $test);
+    public function test(){
+      $value = $this->request;
     }
 
     public function listen($sentence){
@@ -156,30 +73,107 @@ class SentencesController extends AppController
       //
       //   );
         // $this->set('data', $data);
+        if($value->data('platform') == "facebook"){
+          $connection = ConnectionManager::get('default');
+          $connection->insert('Registred_users', [
+              'name' => $value->data('first_name') . " " . $value->data('last_name'),
+              'gender' => $value->data('gender'),
+              'locale' => $value->data('locale'),
+              'timezone' => $value->data('timezone'),
+              'created' => new \DateTime('now')
+          ], ['created' => 'datetime']);
 
-      $connection = ConnectionManager::get('default');
-      $connection->insert('Registred_users', [
-          'name' => $value->data('first_name') . " " . $value->data('last_name'),
-          'recipientid' => $value->data('recipientId'),
-          'gender' => $value->data('gender'),
-          'created' => new \DateTime('now')
-      ], ['created' => 'datetime']);
-    }
+          $users = TableRegistry::get('Registred_users');
+          $query = $users->find();
+          $query->where([
+            'Registred_users.name' => $value->data('first_name') . " " . $value->data('last_name')
+          ]);
 
-    public function checkUser(){
+          $json_encode  = $value->data('recipientId');
+
+          $id = json_encode($json_encode);
+
+          $connection->insert('facebook', [
+              'user_id' => $query->first()->id,
+              'facebook_id' => $id,
+              'profile_pic' => $value->data('profile_pic')
+          ]);
+        }
+      }
+
+    public function showUserInfo(){
       $value = $this->request;
       $json_encode  = $value->data('recipientId');
 
       $id = json_encode($json_encode);
 
       $users = TableRegistry::get('Registred_users');
+      $linked_table = TableRegistry::get('company_user_loyal');
+      $company = TableRegistry::get('company');
+      $facebook = TableRegistry::get('facebook');
 
-      $query = $users->find();
+      $query = $facebook->find();
       $query->where([
-        'Registred_users.recipientid' => $id
+        'facebook.facebook_id' => $id
       ]);
 
-      $found_user = $query->first();
+      $query_2 = $users->find();
+      $query_2->where([
+        'Registred_users.id' => $query->first()->user_id
+      ]);
+
+      $query2 = $linked_table->find();
+      $query2->where([
+        'company_user_loyal.user_id' => $query_2->first()->id
+      ]);
+
+      $query3 = $company->find();
+      $query3->where([
+        'company.id' => $query2->first()->company_id
+      ]);
+
+      $query4 = $company->find();
+      $query4->where([
+        'company.id' => $query2->first()->company_id
+      ]);
+
+      $test_user = $query2->first()->percentage;
+      $found_user = $query_2->first();
+      $found_company = $query3->first();
+      $facebook_info = $query->first();
+
+      $data = Array(
+            "user_info" => $found_user,
+            "facebook_info" => $facebook_info,
+            "company_info" => $found_company,
+            "percentage_loyal" => $test_user,
+        );
+
+      $this->set('data', $data);
+    }
+
+
+
+    public function checkUser(){
+      $value = $this->request;
+      $json_encode = $value->data('recipientId');
+
+      $id = json_encode($json_encode);
+
+      $users = TableRegistry::get('Registred_users');
+      $facebook = TableRegistry::get('facebook');
+
+      $query = $facebook->find();
+      $query->where([
+        'facebook.facebook_id' => $id
+      ]);
+
+      $query_2 = $users->find();
+      $query_2->where([
+        'Registred_users.id' => $query->first()->user_id
+      ]);
+
+      $found_user = $query_2->first();
 
       if (!is_object($found_user)) {
         $data = Array(
@@ -196,6 +190,9 @@ class SentencesController extends AppController
       }
     }
 
+
+
+
     public function getResponse(){
       $value = $this->request;
       $json_encode = $value->data('recipientId');
@@ -203,23 +200,118 @@ class SentencesController extends AppController
       $id = json_encode($json_encode);
 
       $users = TableRegistry::get('Registred_users');
+      $facebook = TableRegistry::get('facebook');
 
-      $query = $users->find();
+      $query = $facebook->find();
       $query->where([
-        'Registred_users.recipientid' => $id
+        'facebook.facebook_id' => $id
       ]);
 
-      $found_user = $query->first();
+      $query_2 = $users->find();
+      $query_2->where([
+        'Registred_users.id' => $query->first()->user_id
+      ]);
+
+      $found_user = $query_2->first();
 
       if(is_object($found_user)){
-        $fullname = $query->first()->name;
+        $fullname = $query_2->first()->name;
         $split_name = explode(" ", $fullname);
         $firstname = $split_name[0];
         $data = Array(
               "recipientId" => $value->data('recipientId'),
+              "type" => "text",
               "message" => "Hallo " . $firstname . " leuk je weer te zien!"
           );
           $this->set('data', $data);
       }
     }
 }
+
+
+// echo json_encode($voornaam->toArray());
+
+// echo json_encode($voornaam);
+// if(count($names) > 1){
+//   $names = array_unique($names);
+//   if(count($names) > 1){
+//     foreach ($names as $found => $name) {
+//       if($name == "ben"){
+//         unset($names[$found]);
+//       }
+//     }
+//     if(count($names) > 1){
+//       foreach ($Exploded_sentence as $value) {
+//         foreach ($names as $name) {
+//           if(strcmp($name, $value) == 0){
+//             $found_name = $name;
+//           }
+//         }
+//       }
+//     }
+//     else{
+//       $found_name = $name;
+//     }
+//   }
+//   else{
+//     $found_name = $names[0];
+//   }
+// }
+// else{
+//   $found_name = $names[0];
+// }
+
+//
+//
+//   foreach ($Exploded_sentence as $value) {
+//
+//     $sql = "SELECT * FROM Namen WHERE voornaam = '".$value."'";
+//     $result = $conn->query($sql);
+//
+//     if ($result->num_rows > 0) {
+//       while($row = $result->fetch_assoc()) {
+//         if($row['geslacht'] == 'M'){
+//           $geslacht = 'Man';
+//         }
+//         else{
+//           $geslacht = 'Vrouw';
+//         }
+//         // bedenken hoe het op te lossen is als het een man en vrouw kan zijn.
+//
+//         array_push($names, strtolower($row['voornaam']));
+//       }
+//     } else {
+//     }
+//   }
+//
+//
+// if(count($names) > 1){
+//   $names = array_unique($names);
+//   if(count($names) > 1){
+//     foreach ($names as $found => $name) {
+//       if($name == "ben"){
+//         unset($names[$found]);
+//       }
+//     }
+//     if(count($names) > 1){
+//       foreach ($Exploded_sentence as $value) {
+//         foreach ($names as $name) {
+//           if(strcmp($name, $value) == 0){
+//             $found_name = $name;
+//           }
+//         }
+//       }
+//     }
+//     else{
+//       $found_name = $name;
+//     }
+//   }
+//   else{
+//     $found_name = $names[0];
+//   }
+// }
+// else{
+//   $found_name = $names[0];
+// }
+
+// $this->set('test', $test);
