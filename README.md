@@ -125,3 +125,45 @@ When de user starts talking to Emma it will send the Check user command and rece
 As you can see the backend will check in the database if this user is already known or not and will respond with an True or False, with this response Emma knows how to react so the conversation can begin with this user.
 
 If the user is not known the backend will receive the information from Facebook and will register the user so Emma can recognize this user in an future conversation.
+
+The code below shows how an user is registered, the code is made in an certain way that it can be adjusted to work with Whatsapp or something else.
+
+```bash
+  $value = $this->request;
+    if($value->data('platform') == "facebook"){
+      $connection = ConnectionManager::get('default');
+      $connection->insert('Registred_users', [
+          'name' => $value->data('first_name') . " " . $value->data('last_name'),
+          'gender' => $value->data('gender'),
+          'locale' => $value->data('locale'),
+          'timezone' => $value->data('timezone'),
+          'created' => new \DateTime('now')
+      ], ['created' => 'datetime']);
+
+      $users = TableRegistry::get('Registred_users');
+      $query = $users->find();
+      $query->where([
+        'Registred_users.name' => $value->data('first_name') . " " . $value->data('last_name')
+      ]);
+
+      $json_encode  = $value->data('recipientId');
+
+      $id = json_encode($json_encode);
+
+      $connection->insert('facebook', [
+          'user_id' => $query->first()->id,
+          'facebook_id' => $id,
+          'profile_pic' => $value->data('profile_pic')
+      ]);
+
+      $data = Array(
+          "recipientId" => $value->data('recipientId'),
+          "registered_completed" => true,
+        );
+
+      $this->set('data', $data);
+    }
+
+```
+
+After this is all done the real conversation will start between the user and Emma, for now this is limited by asking if Emma knows something to do and Emma will react to it with the question what the user would like to do.
