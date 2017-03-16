@@ -222,7 +222,43 @@ class SentencesController extends AppController
       }
 
       elseif(strpos($sent_message, 'kiest bioscoop') !== false){
-        $this->bioscoop($sent_message,$value);
+        $this->film_keuze($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'logan') !== false){
+        $this->logan($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'personen') !== false OR strpos($sent_message, 'persoon') !== false){
+        $this->aantal_personen($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'log_1230') !== false){
+        $this->logan_1230($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'log_1700') !== false){
+        $this->logan_1700($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'log_2100') !== false){
+        $this->logan_2100($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'kon_1100') !== false){
+        $this->kong_1100($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'kon_1630') !== false){
+        $this->kong_1630($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'kon_2200') !== false){
+        $this->kong_2200($sent_message,$value);
+      }
+
+      elseif(strpos($sent_message, 'kong') !== false){
+        $this->kong($sent_message,$value);
       }
 
       elseif(strpos($sent_message, 'kiest karten') !== false){
@@ -232,6 +268,7 @@ class SentencesController extends AppController
       elseif(strpos($sent_message, 'kiest restaurant') !== false){
         $this->restaurant($sent_message,$value);
       }
+
 
       elseif(strpos($sent_message, 'what is love') !== false){
         $data = Array(
@@ -243,7 +280,7 @@ class SentencesController extends AppController
         $this->set('data', $data);
       }
 
-      elseif(strpos($sent_message, 'hallo') !== false OR strpos($sent_message, 'hoi') !== false OR strpos($sent_message, 'hee') !== false OR strpos($sent_message, 'heey') !== false){
+      elseif(strpos($sent_message, 'hallo') !== false OR strpos($sent_message, 'hoi') !== false OR strpos($sent_message, 'hee') !== false OR strpos($sent_message, 'heey') !== false OR strpos($sent_message, 'hey') !== false){
         $this->groeten($sent_message,$value,$found_user);
       }
       else{
@@ -265,6 +302,29 @@ class SentencesController extends AppController
       $this->set('data', $data);
     }
 
+    public function aantal_personen($sent_message,$value){
+
+      $int = intval(preg_replace('/[^0-9]+/', '', $sent_message), 10);
+
+      if($int > 1){
+        $data = Array(
+          "recipientId" => $value->data('recipientId'),
+          "type" => "text",
+          "message" => "Ik zal voor " . $int . " personen reserveren. De kaarten voor de film zitten in je wallet. Veel plezier bij de film!"
+        );
+      }
+      else{
+        $data = Array(
+          "recipientId" => $value->data('recipientId'),
+          "type" => "text",
+          "message" => "Ik zal de film voor je reserveren. Je kaartje voor de film zitten in je wallet. Veel plezier bij de film!"
+        );
+      }
+
+
+      $this->set('data', $data);
+    }
+
     public function nietbegrijpenvraag($sent_message,$value){
       $data = Array(
         "recipientId" => $value->data('recipientId'),
@@ -274,6 +334,8 @@ class SentencesController extends AppController
 
       $this->set('data', $data);
     }
+
+
 
     public function leuksdoenmogelijkheden($sent_message,$value){
       $data = Array(
@@ -294,7 +356,7 @@ class SentencesController extends AppController
             "image_url" => "http://www.gobignews.com/wp-content/images/2016/10/McDonald.jpg",
             "buttons" => [Array(
               "type" => "postback",
-              "title" => "Restaurant klinkt goed!",
+              "title" => "Eten klinkt goed!",
               "payload" => "kiest restaurant"
             )]
           ),Array(
@@ -308,7 +370,18 @@ class SentencesController extends AppController
             )]
           )]
         );
-      $this->set('data', $data);
+        $data_string = json_encode($data);
+
+        $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))
+        );
+        $result = curl_exec($ch);
+
     }
 
     public function leuks_doen($sent_message,$value){
@@ -322,14 +395,14 @@ class SentencesController extends AppController
       $ch = curl_init('https://emma-middleware.herokuapp.com/send');
       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
       curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
       curl_setopt($ch, CURLOPT_HTTPHEADER, array(
           'Content-Type: application/json',
           'Content-Length: ' . strlen($data_string))
       );
-
       $result = curl_exec($ch);
       $this->leuksdoenmogelijkheden($sent_message,$value);
+
     }
 
     public function restaurant($sent_message,$value){
@@ -356,14 +429,275 @@ class SentencesController extends AppController
 
     }
 
-    public function bioscoop($sent_message,$value){
+    public function film_keuze($sent_message,$value){
       $data = Array(
         "recipientId" => $value->data('recipientId'),
         "type" => "text",
-        "message" => "Hoeveel kaartjes wil je dat ik reserveer?"
+        "message" => "Naar welke film wil je gaan ?"
       );
 
-      $this->set('data', $data);
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+    public function logan($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "De film draait op deze tijden, welke tijd komt het beste uit?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+      $this->keuze_tijden_logan($sent_message,$value);
+    }
+
+
+    public function logan_1230($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "Voor hoeveel personen wil je dat ik reserveer voor Logan om 12:30 ?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+    public function logan_1700($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "Voor hoeveel personen wil je dat ik reserveer voor Logan om 17:00 ?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+    public function logan_2100($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "Voor hoeveel personen wil je dat ik reserveer voor Logan om 21:00 ?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+    public function kong_1100($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "Voor hoeveel personen wil je dat ik reserveer voor kong skull island om 11:00 ?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+    public function kong_1630($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "Voor hoeveel personen wil je dat ik reserveer voor kong skull island om 16:30 ?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+    public function kong_2200($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "Voor hoeveel personen wil je dat ik reserveer voor kong skull island om 22:00 ?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+    }
+
+
+
+    public function kong($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "text",
+        "message" => "De film draait op deze tijden, welke tijd komt het beste uit?"
+      );
+
+      $data_string = json_encode($data);
+
+      $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($data_string))
+      );
+      $result = curl_exec($ch);
+      $this->keuze_tijden_kong($sent_message,$value);
+    }
+
+    public function keuze_tijden_kong($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "rich",
+        "data" => [Array(
+          "title" => "Kong Skull island",
+          "image_url" => "http://lucdaalmeijer.nl/kong_tijden/1100_2.jpg",
+          "buttons" => [Array(
+                              "type" => "postback",
+                              "title" => "11:00",
+                              "payload" => "kon_1100"
+                              )]
+          ),Array(
+            "title" => "Kong Skull island",
+            "image_url" => "http://lucdaalmeijer.nl/kong_tijden/1630_2.jpg",
+            "buttons" => [Array(
+              "type" => "postback",
+              "title" => "16:30",
+              "payload" => "kon_1630"
+            )]
+          ),Array(
+            "title" => "Kong Skull island",
+            "image_url" => "http://lucdaalmeijer.nl/kong_tijden/2200_2.jpg",
+            "buttons" => [Array(
+              "type" => "postback",
+              "title" => "22:00",
+              "payload" => "kon_2200"
+            )]
+          )]
+        );
+        $data_string = json_encode($data);
+
+        $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))
+        );
+        $result = curl_exec($ch);
+    }
+
+    public function keuze_tijden_logan($sent_message,$value){
+      $data = Array(
+        "recipientId" => $value->data('recipientId'),
+        "type" => "rich",
+        "data" => [Array(
+          "title" => "Logan",
+          "image_url" => "http://lucdaalmeijer.nl/logan_tijden/1230_2.jpg",
+          "buttons" => [Array(
+                              "type" => "postback",
+                              "title" => "12:30",
+                              "payload" => "log_1230"
+                              )]
+          ),Array(
+            "title" => "Logan",
+            "image_url" => "http://lucdaalmeijer.nl/logan_tijden/1700_2.jpg",
+            "buttons" => [Array(
+              "type" => "postback",
+              "title" => "17:00",
+              "payload" => "log_1700"
+            )]
+          ),Array(
+            "title" => "Logan",
+            "image_url" => "http://lucdaalmeijer.nl/logan_tijden/2100_2.jpg",
+            "buttons" => [Array(
+              "type" => "postback",
+              "title" => "21:00",
+              "payload" => "log_2100"
+            )]
+          )]
+        );
+        $data_string = json_encode($data);
+
+        $ch = curl_init('https://emma-middleware.herokuapp.com/send');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))
+        );
+        $result = curl_exec($ch);
     }
 
     public function showCoupons(){
